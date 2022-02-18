@@ -89,17 +89,30 @@ export function markLocalizeFunction(callExpression: SimpleCallExpression) {
 	return `${placeholderFunctionName}(${stringifyAst(callExpression)})+${placeholderFunctionName}`;
 }
 
+// eslint-disable-next-line complexity
 function getOriginalCall(node: Expression): SimpleCallExpression {
-	if (node.type !== 'BinaryExpression') {
-		throw new Error('Expected BinaryExpression');
+	if (node.type !== 'BinaryExpression' && node.type !== 'SequenceExpression') {
+		throw new Error('Expected BinaryExpression || SequenceExpression');
 	}
-	if (node.left.type !== 'CallExpression') {
-		throw new Error('Expected CallExpression');
+	if (node.type === 'BinaryExpression') {
+		if (node.left.type !== 'CallExpression') {
+			throw new Error('Expected CallExpression');
+		}
+		if (node.left.arguments[0].type !== 'CallExpression') {
+			throw new Error('Expected CallExpression');
+		}
 	}
-	if (node.left.arguments[0].type !== 'CallExpression') {
-		throw new Error('Expected CallExpression');
+	if (node.type === 'SequenceExpression' && node.expressions.length > 0) {
+		if (node.expressions[0].type !== 'CallExpression') {
+			throw new Error('Expected CallExpression');
+		}
+		if (node.expressions[0].arguments.length === 0 || node.expressions[0].arguments[0].type !== 'CallExpression') {
+			throw new Error('Expected CallExpression');
+		}
 	}
-	return node.left.arguments[0];
+	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+	// @ts-ignore
+	return node.type === 'BinaryExpression' ? node.left.arguments[0] : node.expressions[0].arguments[0];
 }
 
 function locatePlaceholders(sourceString: string) {
@@ -107,7 +120,7 @@ function locatePlaceholders(sourceString: string) {
 	const placeholderLocations: PlaceholderLocation[] = [];
 
 	for (const placeholderRange of placeholderRanges) {
-		const code = sourceString.slice(placeholderRange.start, placeholderRange.end);
+		const code = sourceString.slice(placeholderRange.start, placeholderRange.end).replace(/\\/g, '');
 		const node = parseExpressionAt(code, 0, { ecmaVersion: 'latest' }) as Expression;
 
 		placeholderLocations.push({
