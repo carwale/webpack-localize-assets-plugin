@@ -1,6 +1,6 @@
 {
-	"name": "webpack-localize-assets-plugin",
-	"version": "0.0.0-semantic-release",
+	"name": "cw-webpack-localize-assets-plugin",
+	"version": "1.5.0-cw-1.0",
 	"description": "Localize your Webpack bundle with multiple locales",
 	"keywords": [
 		"webpack",
